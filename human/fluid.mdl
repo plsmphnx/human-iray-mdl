@@ -1,0 +1,16 @@
+mdl 1.2;
+
+using df import *;
+
+export material fluid_material(
+    uniform float ior = 1.33,
+    uniform bool thin_walled = false
+) = material(
+    thin_walled: thin_walled,
+    ior: ior,
+    surface: material_surface(
+        scattering: specular_bsdf(
+            mode: scatter_reflect_transmit
+        )
+    )
+);

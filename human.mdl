@@ -1,0 +1,159 @@
+mdl 1.2;
+
+using df import *;
+using state import *;
+using base import *;
+using math import *;
+using anno import *;
+using daz_3d::property_annotations import *;
+using sss import *;
+using human::constants import *;
+using human::hair import *;
+using human::fluid import *;
+using human::layer import *;
+
+export enum scattering_profile {
+    black,
+    fluid,
+    hair,
+    iris,
+    nail,
+    sclera,
+    skin,
+    tooth
+};
+
+export material human(
+    uniform scattering_profile profile = skin
+    [[
+		display_name("Scattering Profile"),
+		in_group("Base")
+	]],
+    color base_color = color(1)
+	[[
+		display_name("Base Color"),
+		in_group("Base"),
+        internal_name("Diffuse Color")
+	]],
+    float opacity_mask = 0.0
+    [[
+		display_name("Opacity Mask"),
+		in_group("Base"),
+        hard_range(0.0, 1.0)
+	]],
+    float glossy_weight = 1.0
+    [[
+		display_name("Glossy Weight"),
+		in_group("Glossy"),
+		hard_range(0.0, 1.0),
+        internal_name("Glossy Color")
+	]],
+    uniform float base_glossiness = 0.6
+    [[
+		display_name("Base Glossiness"),
+		in_group("Glossy"),
+		hard_range(0.0, 1.0)
+	]],
+    uniform float highlight_glossiness = 0.9
+    [[
+		display_name("Highlight Glossiness"),
+		in_group("Glossy"),
+		hard_range(0.0, 1.0)
+	]],
+    uniform float glossy_ior = 1.49
+    [[
+		display_name("Glossy IOR"),
+		in_group("Glossy")
+	]],
+    float3 base_bump = normal()
+    [[
+		display_name("Bump"),
+        in_group("Geometry"),
+        internal_name("Bump Strength")
+	]],
+    float3 base_normal = normal()
+    [[
+		display_name("Normal"),
+        in_group("Geometry"),
+        internal_name("Normal Map")
+	]],
+    float3 displacement = float3(0.0)
+	[[
+		display_name("Displacement"),
+        in_group("Geometry"),
+        internal_name("Displacement Strength")
+	]],
+    float cutout_opacity = 1.0
+    [[
+		display_name("Cutout Opacity"),
+        in_group("Geometry"),
+        internal_name("Cutout Opacity")
+	]],
+    uniform bool thin_walled = false
+    [[
+		display_name("Thin Walled"),
+        in_group("Geometry"),
+        internal_name("Thin Walled")
+	]]
+) = 
+profile == black ?
+    material():
+profile == fluid ?
+    fluid_material(
+        ior: glossy_ior,
+        thin_walled: thin_walled
+    ):
+profile == hair ?
+    hair_material(
+        base_color: base_color,
+        base_glossiness: base_glossiness,
+        highlight_glossiness: highlight_glossiness,
+        base_bump: base_bump,
+        displacement: displacement,
+        cutout_opacity: cutout_opacity,
+        thin_walled: thin_walled
+    ):
+/* default */
+    layered_material(
+        base_color: base_color,
+        opacity_mask: opacity_mask,
+        glossy_weight: glossy_weight,
+        base_glossiness: base_glossiness,
+        highlight_glossiness: highlight_glossiness,
+        glossy_ior: glossy_ior,
+        base_bump: base_bump,
+        base_normal: base_normal,
+        displacement: displacement,
+        cutout_opacity: cutout_opacity,
+        thin_walled: thin_walled,
+        absorption_coefficient:
+            profile == skin || profile == nail ?
+                mono_dermis_absorption*100:
+            profile == iris ?
+                mono_iris_absorption*100:
+            profile == sclera ?
+                mono_iris_scattering*(base_skin_absorption/iris_scattering)*100:
+            /* profile == tooth */
+                color(0.0),
+        scattering_coefficient:
+            profile == iris ?
+                mono_iris_scattering*100:
+            profile == sclera ?
+                mono_iris_scattering*1000:
+            /* default */
+                mono_dermis_scattering*100,
+        anisotropy:
+            profile == skin || profile == nail ?
+                dermis_anisotropy:
+            profile == iris || profile == sclera ?
+                eye_anisotropy:
+            /* default */
+                0.0,
+        ior:
+            profile == iris || profile == sclera ?
+                eye_ior:
+            profile == nail || profile == tooth ?
+                hair_ior:
+            /* default */
+                skin_ior
+    );

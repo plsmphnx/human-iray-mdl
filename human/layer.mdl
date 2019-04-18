@@ -1,0 +1,81 @@
+mdl 1.2;
+
+using df import *;
+using state import *;
+using base import *;
+using sss import *;
+
+export material layered_material(
+    color base_color = color(1),
+    float opacity_mask = 0.0,
+    float glossy_weight = 1.0,
+    uniform float base_glossiness = 0.6,
+    uniform float highlight_glossiness = 0.9,
+    uniform float glossy_ior = 1.49,
+    float3 base_bump = normal(),
+    float3 base_normal = normal(),
+    float3 displacement = float3(0.0),
+    float cutout_opacity = 1.0,
+    uniform bool thin_walled = false,
+    uniform color absorption_coefficient = color(0.0),
+    uniform color scattering_coefficient = color(0.0),
+    uniform float anisotropy = 0.0,
+    uniform float ior = 1.33
+) = let {
+    material base_material = thin_layer_sss(
+        surface_color: base_color,
+        absorption_coefficient: absorption_coefficient,
+        scattering_coefficient: scattering_coefficient,
+        anisotropy: anisotropy,
+        ior: color(ior)
+    );
+    
+    anisotropy_return roughness_min = anisotropy_conversion(
+        roughness: gloss_to_rough(base_glossiness)
+    );
+    
+    anisotropy_return roughness_max = anisotropy_conversion(
+        roughness: gloss_to_rough(highlight_glossiness)
+    );
+    
+    /* Define layers */
+    bsdf fluid_layer = weighted_layer(
+        weight: glossy_weight,
+        layer: simple_glossy_bsdf(
+            roughness_u: roughness_max.roughness_u,
+            roughness_v: roughness_max.roughness_v,
+            tangent_u: roughness_max.tangent_u
+        ),
+        base: simple_glossy_bsdf(
+            roughness_u: roughness_min.roughness_u,
+            roughness_v: roughness_min.roughness_v,
+            tangent_u: roughness_min.tangent_u
+        )
+    );
+
+    bsdf surface_layer = custom_curve_layer(
+        normal_reflectivity: normal_from_ior(glossy_ior),
+        layer: fluid_layer,
+        base: weighted_layer(
+            weight: 1.0 - opacity_mask,
+            layer: base_material.surface.scattering,
+            base: diffuse_reflection_bsdf(
+                tint: base_color
+            ),
+            normal: base_normal
+        )
+    );
+    
+} in material(
+    thin_walled: thin_walled,
+    ior: base_material.ior,
+    surface: material_surface(
+        scattering: surface_layer
+    ),
+    volume: base_material.volume,
+    geometry: material_geometry(
+        displacement: displacement,
+        normal: base_bump,
+        cutout_opacity: cutout_opacity
+    )
+);

@@ -1,0 +1,114 @@
+mdl 1.2;
+
+using df import *;
+using math import *;
+
+export float normal_from_ior(
+    float ior,
+    float ior_0 = 1.0
+) uniform {
+    return ((ior - ior_0)*(ior - ior_0))/((ior + ior_0)*(ior + ior_0));
+}
+
+export color calculate_sss_albedo(
+    color absorption_coefficient,
+    color scattering_coefficient,
+    float anisotropy = 0.0,
+    color ior = 1.0
+) uniform {
+    /* reduced volume albedo */
+    color reduced_scattering_coefficient = scattering_coefficient*(1 - anisotropy);
+    color a = reduced_scattering_coefficient/(reduced_scattering_coefficient + absorption_coefficient);
+    
+    /* reﬂection parameter */
+    /* http://www.eugenedeon.com/project/qd/ */
+    color c1x2 = -9.23372
+        + ior*(22.2272 + ior*(-20.9292 + ior*(10.2291 + ior*(-2.54396 + ior*(0.254913)))));
+    color c2x3 = -1641.1
+        + (((135.926)/ior + -656.175)/ior + 1376.53)/ior
+        + ior*(1213.67 + ior*(-568.556 + ior*(164.798 + ior*(-27.0181 + ior*(1.91826)))));
+    color A = (1 + c2x3)/(1 - c1x2);
+    
+    /* surface albedo */
+    /* http://graphics.ucsd.edu/~henrik/papers/fast_bssrdf/fast_bssrdf.pdf */
+    color f = exp(-sqrt(3*(1 - a)));
+    return (a/2)*(1 + pow(f, 4*A/3))*f;
+}
+
+export struct sss_layer_transmit {
+    color absorption;
+    float scattering;
+};
+
+float calc_transparency(float s, float ss) uniform {
+    if (ss == 0) {
+        return 1 - s;
+    } else if (s <= ss) {
+        return 1;
+    } else {
+        return (1 - sqrt(4*ss*(s - 1) + 1))/(2*ss);
+    }
+}
+
+float calc_tint(float s, float ss, float t) {
+    if (t == 0) {
+        return s;
+    } else if (ss == 0) {
+        return t < 1 ? s/(1 - t) : 0;
+    } else {
+        return ((t - 1) + sqrt(4*t*t*s*ss + (t - 1)*(t - 1)))/(2*t*t*ss);
+    }
+}
+
+export sss_layer_transmit separate_sss_components(
+    color surface,
+    color subsurface
+) uniform {
+    float3 s = float3(surface);
+    float3 ss = float3(subsurface);
+    float t = min_value(float3(
+        calc_transparency(s.x, ss.x),
+        calc_transparency(s.y, ss.y),
+        calc_transparency(s.z, ss.z)
+    ));
+
+    return sss_layer_transmit(
+        absorption: color(
+            calc_tint(s.x, ss.x, t),
+            calc_tint(s.y, ss.y, t),
+            calc_tint(s.z, ss.z, t)
+        ),
+        scattering: t
+    );
+}
+
+export material thin_layer_sss(
+    color surface_color = color(1),
+    uniform color absorption_coefficient = color(0.0),
+    uniform color scattering_coefficient = color(0.0),
+    uniform float anisotropy = 0.0,
+    uniform color ior = color(1.0)
+) = let {
+    uniform color albedo = calculate_sss_albedo(absorption_coefficient, scattering_coefficient, anisotropy, ior);
+    sss_layer_transmit transmit = separate_sss_components(surface_color, albedo);
+} in material(
+    ior: ior,
+    surface: material_surface(
+        scattering: weighted_layer(
+            weight: abs(1.0 - transmit.scattering),
+            layer: diffuse_reflection_bsdf(
+                tint: transmit.absorption
+            ),
+            base: diffuse_transmission_bsdf(
+                tint: transmit.absorption
+            )
+        )
+    ),
+    volume: material_volume(
+        scattering: anisotropic_vdf(
+            directional_bias: anisotropy
+        ),
+        absorption_coefficient: absorption_coefficient,
+        scattering_coefficient: scattering_coefficient
+    )
+);

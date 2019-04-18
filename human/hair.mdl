@@ -1,0 +1,103 @@
+mdl 1.2;
+
+using df import *;
+using state import *;
+using base import *;
+using math import *;
+using human::constants import *;
+using sss import *;
+
+color color_adjust(
+    color value,
+    float factor
+) {
+    float v = max_value(value);
+    return v > 0 ? value*(pow(v, 1/factor)/v) : color(0);
+}
+
+float3 rotate_vector(
+    float3 vector,
+    float3 direction,
+    float angle
+) {
+    float3 k = normalize(cross(vector, direction));
+    return vector*cos(angle) + cross(k, vector)*sin(angle) + k*dot(k, vector)*(1 - cos(angle));
+}
+
+export material hair_material(
+    color base_color,
+    uniform float base_glossiness = 0.6,
+    uniform float highlight_glossiness = 0.9,
+    float3 base_bump = normal(),
+    float3 displacement = float3(0.0),
+    float cutout_opacity = 1.0,
+    uniform bool thin_walled = false
+) = let {
+    anisotropy_return roughness_min = anisotropy_conversion(
+        roughness: gloss_to_rough(base_glossiness),
+        anisotropy: thin_walled ? 1.0 : 0.0,
+        anisotropy_rotation: thin_walled ? 0.25 : 0.0
+    );
+    
+    anisotropy_return roughness_max = anisotropy_conversion(
+        roughness: gloss_to_rough(highlight_glossiness),
+        anisotropy: thin_walled ? 1.0 : 0.0,
+        anisotropy_rotation: thin_walled ? 0.25 : 0.0
+    );
+    
+    color hair_color = thin_walled ? color_adjust(base_color, 2.0) : sqrt(base_color);
+    
+} in material(
+    thin_walled: thin_walled,
+    ior: color(hair_ior),
+    surface: material_surface(
+        scattering: thin_walled ?
+            custom_curve_layer(
+                normal_reflectivity: normal_from_ior(hair_ior),
+                normal: rotate_vector(normal(), roughness_max.tangent_u, radians(hair_normal_offset_degrees)),
+                layer: simple_glossy_bsdf(
+                    tint: color(1.0),
+                    roughness_u: roughness_max.roughness_u,
+                    roughness_v: roughness_max.roughness_v,
+                    tangent_u: roughness_max.tangent_u,
+                    mode: scatter_reflect
+                ),
+                base: weighted_layer(
+                    weight: 0.5,
+                    normal: rotate_vector(normal(), roughness_min.tangent_u, radians(-hair_normal_offset_degrees)),
+                    layer: simple_glossy_bsdf(
+                        tint: hair_color,
+                        roughness_u: roughness_min.roughness_u,
+                        roughness_v: roughness_min.roughness_v,
+                        tangent_u: roughness_min.tangent_u,
+                        mode: scatter_reflect
+                    ),
+                    base: diffuse_transmission_bsdf(
+                        tint: hair_color
+                    )
+                )
+            ) :
+            custom_curve_layer(
+                normal_reflectivity: normal_from_ior(hair_ior),
+                layer: simple_glossy_bsdf(
+                    tint: color(1.0),
+                    roughness_u: roughness_max.roughness_u,
+                    roughness_v: roughness_max.roughness_v,
+                    tangent_u: roughness_max.tangent_u,
+                    mode: scatter_reflect
+                ),
+                base: simple_glossy_bsdf(
+                    tint: hair_color,
+                    roughness_u: roughness_min.roughness_u,
+                    roughness_v: roughness_min.roughness_v,
+                    tangent_u: roughness_min.tangent_u,
+                    mode: scatter_reflect_transmit
+                )
+            )
+    ),
+    geometry: material_geometry(
+        displacement: displacement,
+        normal: thin_walled ? base_bump : rotate_vector(normal(), texture_tangent_u(0), radians(-hair_normal_offset_degrees)),
+        cutout_opacity: cutout_opacity
+    )
+);

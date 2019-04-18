@@ -1,0 +1,40 @@
+mdl 1.2;
+
+/* Wavelengths: r - 686nm, g - 556nm, b - 414nm */
+/* All coefficients in cm^-1 */
+
+/* http://omlc.org/spectra/hemoglobin/ */
+export const color blood_absorption = color(1.461066046511628, 292.1060930232558, 2807.946139534883);
+
+/* http://omlc.org/news/jan98/skinoptics.html */
+export const color base_skin_absorption = color(0.2715961413570324, 0.44064934746365325, 1.9238122099366454);
+export const float blood_ratio = 0.05;
+export const color dermis_absorption = blood_ratio*blood_absorption + (1.0 - blood_ratio)*base_skin_absorption;
+export const color dermis_scattering = color(20.162199036202096, 36.18334609156765, 91.8240900864384);
+export const float dermis_anisotropy = 0.7;
+
+/* http://graphics.ucsd.edu/papers/egsr2006skin/egsr2006skin.pdf */
+export const color eumelanin_absorption = color(236.91067506702433, 476.9192799345716, 1273.3060412488216);
+export const color pheomelanin_absorption = color(97.69187571879, 265.0285972229657, 1075.5890631807294);
+
+/* ? */
+export const float hair_normal_offset_degrees = 3.0;
+export const float skin_ior = 1.41;
+export const float hair_ior = 1.55;
+
+/* http://www.npsg.uwaterloo.ca/resources/docs/eg06.pdf */
+export const float eye_ior = 1.47;
+/* http://optics.sgu.ru/_media/optics/staff/bashkatov/koblova_spie_07_6535_653521.pdf */
+export const float eye_anisotropy = -0.2;
+/* https://hal.inria.fr/inria-00166304/PDF/RReye2.pdf */
+export const color iris_scattering = color(44.96937439631752, 59.71377930801552, 114.04187804754638);
+/* this is a cheat given the structure of the eye, assuming that over the average iris thickness
+   of 0.0491cm anything that is not scattered is absorbed: a = -log(1 - exp(-s*l))/l */
+export const color iris_absorption = color(2.371582369218289, 1.1153939191901727, 0.07549361678794998);
+
+
+/* corrective terms given Iray's monochromatic scattering */
+export const float mono_dermis_scattering = float3(dermis_scattering).x;
+export const color mono_dermis_absorption = mono_dermis_scattering*dermis_absorption/dermis_scattering;
+export const float mono_iris_scattering = float3(iris_scattering).z;
+export const color mono_iris_absorption = mono_iris_scattering*iris_absorption/iris_scattering;
