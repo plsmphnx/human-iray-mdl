@@ -26,75 +26,75 @@ export enum scattering_profile {
 export material human(
     uniform scattering_profile profile = skin
     [[
-		display_name("Scattering Profile"),
-		in_group("Base")
-	]],
+        display_name("Scattering Profile"),
+        in_group("Base")
+    ]],
     color base_color = color(1)
-	[[
-		display_name("Base Color"),
-		in_group("Base"),
+    [[
+        display_name("Base Color"),
+        in_group("Base"),
         internal_name("Diffuse Color")
-	]],
+    ]],
     float opacity_mask = 0.0
     [[
-		display_name("Opacity Mask"),
-		in_group("Base"),
+        display_name("Opacity Mask"),
+        in_group("Base"),
         hard_range(0.0, 1.0)
-	]],
+    ]],
     float glossy_weight = 1.0
     [[
-		display_name("Glossy Weight"),
-		in_group("Glossy"),
-		hard_range(0.0, 1.0),
+        display_name("Glossy Weight"),
+        in_group("Glossy"),
+        hard_range(0.0, 1.0),
         internal_name("Glossy Color")
-	]],
+    ]],
     uniform float base_glossiness = 0.6
     [[
-		display_name("Base Glossiness"),
-		in_group("Glossy"),
-		hard_range(0.0, 1.0)
-	]],
+        display_name("Base Glossiness"),
+        in_group("Glossy"),
+        hard_range(0.0, 1.0)
+    ]],
     uniform float highlight_glossiness = 0.9
     [[
-		display_name("Highlight Glossiness"),
-		in_group("Glossy"),
-		hard_range(0.0, 1.0)
-	]],
+        display_name("Highlight Glossiness"),
+        in_group("Glossy"),
+        hard_range(0.0, 1.0)
+    ]],
     uniform float glossy_ior = 1.49
     [[
-		display_name("Glossy IOR"),
-		in_group("Glossy")
-	]],
+        display_name("Glossy IOR"),
+        in_group("Glossy")
+    ]],
     float3 base_bump = normal()
     [[
-		display_name("Bump"),
+        display_name("Bump"),
         in_group("Geometry"),
         internal_name("Bump Strength")
-	]],
+    ]],
     float3 base_normal = normal()
     [[
-		display_name("Normal"),
+        display_name("Normal"),
         in_group("Geometry"),
         internal_name("Normal Map")
-	]],
+    ]],
     float3 displacement = float3(0.0)
-	[[
-		display_name("Displacement"),
+    [[
+        display_name("Displacement"),
         in_group("Geometry"),
         internal_name("Displacement Strength")
-	]],
+    ]],
     float cutout_opacity = 1.0
     [[
-		display_name("Cutout Opacity"),
+        display_name("Cutout Opacity"),
         in_group("Geometry"),
         internal_name("Cutout Opacity")
-	]],
+    ]],
     uniform bool thin_walled = false
     [[
-		display_name("Thin Walled"),
+        display_name("Thin Walled"),
         in_group("Geometry"),
         internal_name("Thin Walled")
-	]]
+    ]]
 ) = 
 profile == black ?
     material():
