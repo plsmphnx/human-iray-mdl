@@ -30,42 +30,28 @@ export material layered_material(
         ior: color(ior)
     );
     
-    anisotropy_return roughness_min = anisotropy_conversion(
-        roughness: gloss_to_rough(base_glossiness)
-    );
-    
-    anisotropy_return roughness_max = anisotropy_conversion(
-        roughness: gloss_to_rough(highlight_glossiness)
-    );
-    
-    /* Define layers */
-    bsdf fluid_layer = weighted_layer(
-        weight: glossy_weight,
-        layer: simple_glossy_bsdf(
-            roughness_u: roughness_max.roughness_u,
-            roughness_v: roughness_max.roughness_v,
-            tangent_u: roughness_max.tangent_u
-        ),
-        base: simple_glossy_bsdf(
-            roughness_u: roughness_min.roughness_u,
-            roughness_v: roughness_min.roughness_v,
-            tangent_u: roughness_min.tangent_u
-        )
-    );
-
     bsdf surface_layer = custom_curve_layer(
+        weight: glossy_weight,
         normal_reflectivity: normal_from_ior(glossy_ior),
-        layer: fluid_layer,
-        base: weighted_layer(
-            weight: 1.0 - opacity_mask,
-            layer: base_material.surface.scattering,
-            base: diffuse_reflection_bsdf(
-                tint: base_color
+        layer: simple_glossy_bsdf(
+            roughness_u: gloss_to_rough(highlight_glossiness)
+        ),
+        base: custom_curve_layer(
+            normal_reflectivity: 1.0,
+            grazing_reflectivity: normal_from_ior(glossy_ior),
+            base: simple_glossy_bsdf(
+                roughness_u: gloss_to_rough(base_glossiness)
             ),
-            normal: base_normal
+            layer: weighted_layer(
+                weight: 1.0 - opacity_mask,
+                layer: base_material.surface.scattering,
+                base: diffuse_reflection_bsdf(
+                    tint: base_color
+                ),
+                normal: base_normal
+            )
         )
     );
-    
 } in material(
     thin_walled: thin_walled,
     ior: base_material.ior,
