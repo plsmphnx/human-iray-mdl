@@ -139,7 +139,7 @@ profile == hair ?
             profile == iris ?
                 mono_iris_scattering*100:
             profile == sclera ?
-                mono_iris_scattering*1000:
+                mono_iris_scattering*10*100:
             /* default */
                 mono_dermis_scattering*100,
         anisotropy:

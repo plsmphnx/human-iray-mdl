@@ -3,6 +3,7 @@ mdl 1.2;
 using df import *;
 using state import *;
 using base import *;
+using math import *;
 using sss import *;
 
 export material layered_material(
@@ -30,26 +31,25 @@ export material layered_material(
         ior: color(ior)
     );
     
+    float glossiness = base_glossiness + (
+        clamp(glossy_weight, 0.0, 1.0) * 
+        (highlight_glossiness - base_glossiness)
+    );
+    
     bsdf surface_layer = custom_curve_layer(
-        weight: glossy_weight,
-        normal_reflectivity: normal_from_ior(glossy_ior),
-        layer: simple_glossy_bsdf(
-            roughness_u: gloss_to_rough(highlight_glossiness)
+        /* inverted Schlick's approximation */
+        normal_reflectivity: 1.0 - normal_from_ior(glossy_ior),
+        grazing_reflectivity: 0.0,
+        base: simple_glossy_bsdf(
+            roughness_u: gloss_to_rough(glossiness)
         ),
-        base: custom_curve_layer(
-            normal_reflectivity: 1.0,
-            grazing_reflectivity: normal_from_ior(glossy_ior),
-            base: simple_glossy_bsdf(
-                roughness_u: gloss_to_rough(base_glossiness)
+        layer: weighted_layer(
+            weight: 1.0 - clamp(opacity_mask, 0.0, 1.0),
+            layer: base_material.surface.scattering,
+            base: diffuse_reflection_bsdf(
+                tint: base_color
             ),
-            layer: weighted_layer(
-                weight: 1.0 - opacity_mask,
-                layer: base_material.surface.scattering,
-                base: diffuse_reflection_bsdf(
-                    tint: base_color
-                ),
-                normal: base_normal
-            )
+            normal: base_normal
         )
     );
 } in material(
