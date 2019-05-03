@@ -23,6 +23,8 @@ export enum scattering_profile {
     tooth
 };
 
+const float corrective_factor = 100;
+
 export material human(
     uniform scattering_profile profile = skin
     [[
@@ -48,13 +50,13 @@ export material human(
         hard_range(0.0, 1.0),
         internal_name("Glossy Color")
     ]],
-    uniform float base_glossiness = 0.6
+    uniform float base_glossiness = 0.7
     [[
         display_name("Base Glossiness"),
         in_group("Glossy"),
         hard_range(0.0, 1.0)
     ]],
-    uniform float highlight_glossiness = 0.9
+    uniform float highlight_glossiness = 1.0
     [[
         display_name("Highlight Glossiness"),
         in_group("Glossy"),
@@ -128,20 +130,20 @@ profile == hair ?
         thin_walled: thin_walled,
         absorption_coefficient:
             profile == skin || profile == nail ?
-                mono_dermis_absorption*100:
+                mono_dermis_absorption*corrective_factor:
             profile == iris ?
-                mono_iris_absorption*100:
+                mono_iris_absorption*corrective_factor:
             profile == sclera ?
-                mono_iris_scattering*(base_skin_absorption/iris_scattering)*100:
+                mono_iris_scattering*(base_skin_absorption/iris_scattering)*corrective_factor:
             /* profile == tooth */
                 color(0.0),
         scattering_coefficient:
             profile == iris ?
-                mono_iris_scattering*100:
+                mono_iris_scattering*corrective_factor:
             profile == sclera ?
-                mono_iris_scattering*10*100:
+                mono_iris_scattering*10*corrective_factor:
             /* default */
-                mono_dermis_scattering*100,
+                mono_dermis_scattering*corrective_factor,
         anisotropy:
             profile == skin || profile == nail ?
                 dermis_anisotropy:

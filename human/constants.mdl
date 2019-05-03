@@ -1,7 +1,7 @@
 mdl 1.2;
 
-/* Wavelengths: r - 686nm, g - 556nm, b - 414nm */
-/* All coefficients in cm^-1 */
+/* wavelengths: r - 686nm, g - 556nm, b - 414nm */
+/* all coefficients in cm^-1 */
 
 /* http://omlc.org/spectra/hemoglobin/ */
 export const color blood_absorption = color(1.461066046511628, 292.1060930232558, 2807.946139534883);
@@ -31,7 +31,6 @@ export const color iris_scattering = color(44.96937439631752, 59.71377930801552,
 /* this is a cheat given the structure of the eye, assuming that over the average iris thickness
    of 0.0491cm anything that is not scattered is absorbed: a = -log(1 - exp(-s*l))/l */
 export const color iris_absorption = color(2.371582369218289, 1.1153939191901727, 0.07549361678794998);
-
 
 /* corrective terms given Iray's monochromatic scattering */
 export const float mono_dermis_scattering = float3(dermis_scattering).x;
