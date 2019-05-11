@@ -1,4 +1,4 @@
-mdl 1.2;
+mdl 1.4;
 
 using df import *;
 using state import *;
@@ -7,7 +7,7 @@ using math import *;
 using sss import *;
 
 export material layered_material(
-    color base_color = color(1),
+    color base_color = color(1.0),
     float opacity_mask = 0.0,
     float glossy_weight = 1.0,
     uniform float base_glossiness = 0.6,
@@ -31,20 +31,19 @@ export material layered_material(
         ior: color(ior)
     );
     
-    float glossiness = base_glossiness + (
-        clamp(glossy_weight, 0.0, 1.0) * 
-        (highlight_glossiness - base_glossiness)
-    );
-    
     bsdf surface_layer = custom_curve_layer(
         /* inverted Schlick's approximation */
         normal_reflectivity: 1.0 - normal_from_ior(glossy_ior),
         grazing_reflectivity: 0.0,
         base: simple_glossy_bsdf(
-            roughness_u: gloss_to_rough(glossiness)
+            roughness_u: gloss_to_rough(lerp(
+                base_glossiness,
+                highlight_glossiness,
+                saturate(glossy_weight)
+            ))
         ),
         layer: weighted_layer(
-            weight: 1.0 - clamp(opacity_mask, 0.0, 1.0),
+            weight: 1.0 - saturate(opacity_mask),
             layer: base_material.surface.scattering,
             base: diffuse_reflection_bsdf(
                 tint: base_color

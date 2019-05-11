@@ -1,4 +1,4 @@
-mdl 1.2;
+mdl 1.4;
 
 using df import *;
 using state import *;
@@ -12,7 +12,7 @@ color color_adjust(
     float factor
 ) {
     float v = max_value(value);
-    return v > 0 ? value*(pow(v, 1/factor)/v) : color(0);
+    return v > 0 ? value*(pow(v, 1/factor)/v) : color(0.0);
 }
 
 float3 rotate_vector(

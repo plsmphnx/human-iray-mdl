@@ -1,4 +1,4 @@
-mdl 1.2;
+mdl 1.4;
 
 using df import *;
 using math import *;
@@ -35,72 +35,26 @@ export color calculate_sss_albedo(
     return (a/2)*(1 + pow(f, 4*A/3))*f;
 }
 
-export struct sss_layer_transmit {
-    color absorption;
-    float scattering;
-};
-
-float calc_transparency(float s, float ss) uniform {
-    if (ss == 0) {
-        return 1 - s;
-    } else if (s <= ss) {
-        return 1;
-    } else {
-        return (1 - sqrt(4*ss*(s - 1) + 1))/(2*ss);
-    }
-}
-
-float calc_tint(float s, float ss, float t) {
-    if (t == 0) {
-        return s;
-    } else if (ss == 0) {
-        return t < 1 ? s/(1 - t) : 0;
-    } else {
-        return ((t - 1) + sqrt(4*t*t*s*ss + (t - 1)*(t - 1)))/(2*t*t*ss);
-    }
-}
-
-export sss_layer_transmit separate_sss_components(
-    color surface,
-    color subsurface
-) uniform {
-    float3 s = float3(surface);
-    float3 ss = float3(subsurface);
-    float t = min_value(float3(
-        calc_transparency(s.x, ss.x),
-        calc_transparency(s.y, ss.y),
-        calc_transparency(s.z, ss.z)
-    ));
-
-    return sss_layer_transmit(
-        absorption: color(
-            calc_tint(s.x, ss.x, t),
-            calc_tint(s.y, ss.y, t),
-            calc_tint(s.z, ss.z, t)
-        ),
-        scattering: t
-    );
-}
-
 export material thin_layer_sss(
-    color surface_color = color(1),
+    color surface_color = color(1.0),
     uniform color absorption_coefficient = color(0.0),
     uniform color scattering_coefficient = color(0.0),
     uniform float anisotropy = 0.0,
     uniform color ior = color(1.0)
 ) = let {
     uniform color albedo = calculate_sss_albedo(absorption_coefficient, scattering_coefficient, anisotropy, ior);
-    sss_layer_transmit transmit = separate_sss_components(surface_color, albedo);
 } in material(
     ior: ior,
     surface: material_surface(
-        scattering: weighted_layer(
-            weight: abs(1.0 - transmit.scattering),
-            layer: diffuse_reflection_bsdf(
-                tint: transmit.absorption
-            ),
+        scattering: color_weighted_layer(
+            /* surface_color > albedo */
+            /* surface_color = weight + (1 - weight)*albedo*((1 - weight) + weight*albedo*(...)) */
+            weight: saturate(surface_color - albedo)/((color(1.0) - albedo) - albedo*(color(1.0) - surface_color)),
+            layer: diffuse_reflection_bsdf(),
             base: diffuse_transmission_bsdf(
-                tint: transmit.absorption
+                /* surface_color < albedo */
+                /* surface_color = albedo * tint^2 */
+                tint: sqrt(saturate(surface_color/albedo))
             )
         )
     ),

@@ -1,4 +1,4 @@
-mdl 1.2;
+mdl 1.4;
 
 using df import *;
 using state import *;
@@ -31,7 +31,7 @@ export material human(
         display_name("Scattering Profile"),
         in_group("Base")
     ]],
-    color base_color = color(1)
+    color base_color = color(1.0)
     [[
         display_name("Base Color"),
         in_group("Base"),
@@ -130,20 +130,20 @@ profile == hair ?
         thin_walled: thin_walled,
         absorption_coefficient:
             profile == skin || profile == nail ?
-                mono_dermis_absorption*corrective_factor:
+                dermis_absorption*corrective_factor:
             profile == iris ?
-                mono_iris_absorption*corrective_factor:
+                iris_absorption*corrective_factor:
             profile == sclera ?
-                mono_iris_scattering*(base_skin_absorption/iris_scattering)*corrective_factor:
+                base_skin_absorption*corrective_factor:
             /* profile == tooth */
                 color(0.0),
         scattering_coefficient:
             profile == iris ?
-                mono_iris_scattering*corrective_factor:
+                iris_scattering*corrective_factor:
             profile == sclera ?
-                mono_iris_scattering*10*corrective_factor:
+                iris_scattering*10*corrective_factor:
             /* default */
-                mono_dermis_scattering*corrective_factor,
+                dermis_scattering*corrective_factor,
         anisotropy:
             profile == skin || profile == nail ?
                 dermis_anisotropy:
