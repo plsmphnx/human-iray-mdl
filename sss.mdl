@@ -14,10 +14,10 @@ export color calculate_sss_albedo(
     color absorption_coefficient,
     color scattering_coefficient,
     float anisotropy = 0.0,
-    color ior = 1.0
+    color ior = color(1.0)
 ) uniform {
     /* reduced volume albedo */
-    color reduced_scattering_coefficient = scattering_coefficient*(1 - anisotropy);
+    color reduced_scattering_coefficient = scattering_coefficient*(1.0 - anisotropy);
     color a = reduced_scattering_coefficient/(reduced_scattering_coefficient + absorption_coefficient);
     
     /* reﬂection parameter */
@@ -49,7 +49,7 @@ export material thin_layer_sss(
         scattering: color_weighted_layer(
             /* surface_color > albedo */
             /* surface_color = weight + (1 - weight)*albedo*((1 - weight) + weight*albedo*(...)) */
-            weight: saturate(surface_color - albedo)/((color(1.0) - albedo) - albedo*(color(1.0) - surface_color)),
+            weight: saturate(surface_color - albedo)/((1.0 - albedo) - albedo*(1.0 - surface_color)),
             layer: diffuse_reflection_bsdf(),
             base: diffuse_transmission_bsdf(
                 /* surface_color < albedo */

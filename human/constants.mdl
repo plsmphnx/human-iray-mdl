@@ -1,5 +1,7 @@
 mdl 1.4;
 
+using math import *;
+
 /* wavelengths: r - 686nm, g - 556nm, b - 414nm */
 /* all coefficients in cm^-1 */
 
@@ -9,7 +11,7 @@ export const color blood_absorption = color(1.461066046511628, 292.1060930232558
 /* http://omlc.org/news/jan98/skinoptics.html */
 export const color base_skin_absorption = color(0.2715961413570324, 0.44064934746365325, 1.9238122099366454);
 export const float blood_ratio = 0.05;
-export const color dermis_absorption = blood_ratio*blood_absorption + (1.0 - blood_ratio)*base_skin_absorption;
+export const color dermis_absorption = lerp(base_skin_absorption, blood_absorption, blood_ratio);
 export const color dermis_scattering = color(20.162199036202096, 36.18334609156765, 91.8240900864384);
 export const float dermis_anisotropy = 0.7;
 
